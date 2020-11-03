@@ -1,0 +1,5 @@
+discord.py
+PyNaCl
+python-dotenv
+youtube-dl
+youtube-search-python
