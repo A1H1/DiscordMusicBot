@@ -13,7 +13,6 @@ from youtubesearchpython import SearchVideos
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 PREFIX = os.getenv('DISCORD_PREFIX')
-USER_ID = os.getenv('DISCORD_USER_ID')
 
 bot = commands.Bot(command_prefix=PREFIX)
 isPlaying = True
@@ -124,7 +123,6 @@ async def download_file(url, key):
         }
         youtube_dl.YoutubeDL(ydl_opts).download([url])
         playlist.append([key, url])
-        clear_cache()
     finally:
         pass
 
