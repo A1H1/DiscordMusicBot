@@ -142,8 +142,8 @@ async def download_file(channel, url, key):
         youtube_dl.YoutubeDL(ydl_opts).download([url])
         playlist.append([key, url])
         clear_cache()
-    except Exception:
-        await channel.send(str(Exception))
+    except Exception as e:
+        await channel.send(str(e))
         pass
 
 
@@ -161,7 +161,6 @@ async def get_recommended_song(ctx, key):
     response = requests.get(url)
     if response.ok:
         data = json.loads(response.content)
-        print(data)
         if len(data['items']) > 1:
             video_id = data['items'][1]['id']['videoId']
             audio = [f"https://www.youtube.com/watch?v={video_id}", video_id]
