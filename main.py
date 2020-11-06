@@ -118,6 +118,7 @@ async def disconnect(ctx):
         return
 
     is_playing = False
+    await ctx.channel.send('Bye Bye')
     await voice.disconnect()
 
 
@@ -178,7 +179,6 @@ async def get_recommended_song(ctx, key):
     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&relatedToVideoId=" \
           f"{key}&type=video&key={YOUTUBE_KEY}"
     response = requests.get(url)
-    print(response.content)
     if response.ok:
         songs = json.loads(response.content)['items']
         if len(songs) > 1:
