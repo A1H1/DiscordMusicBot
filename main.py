@@ -15,11 +15,12 @@ from youtubesearchpython import SearchVideos
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 PREFIX = os.getenv('DISCORD_PREFIX')
-YOUTUBE_KEY = os.getenv('YOUTUBE_API')
+YOUTUBE_KEY = os.getenv('YOUTUBE_API1')
 
 bot = commands.Bot(command_prefix=PREFIX)
-isPlaying = True
+is_playing = True
 is_skipping = False
+is_recommended = True
 playlist = []
 loop = asyncio.get_event_loop()
 current_playing_song = ""
@@ -28,7 +29,7 @@ current_playing_song = ""
 async def autoplay(ctx):
     global is_skipping, current_playing_song
     voice = get(bot.voice_clients, guild=ctx.guild)
-    while isPlaying:
+    while is_playing:
         if playlist:
             song = playlist.pop()
             current_playing_song = song[0]
@@ -42,8 +43,12 @@ async def autoplay(ctx):
                 else:
                     await asyncio.sleep(.1)
         else:
-            video_id = current_playing_song if current_playing_song else get_random_song().strip('\n').split("=")[-1]
-            await get_recommended_song(ctx, video_id)
+            if is_recommended:
+                video_id = current_playing_song if current_playing_song else get_random_song()[-1]
+                await get_recommended_song(ctx, video_id)
+            else:
+                audio = get_random_song()
+                await download_file(ctx.channel, audio[0], audio[1])
 
 
 @bot.event
@@ -53,6 +58,7 @@ async def on_ready():
 
 @bot.command(pass_context=True, name='summon', help='Connect the bot to voice channel')
 async def summon(ctx):
+    global is_playing
     if not await check_if_user_connected(ctx):
         return
 
@@ -61,6 +67,7 @@ async def summon(ctx):
         await ctx.channel.send('Bot is already connected to voice channel')
         return
 
+    is_playing = True
     channel = ctx.author.voice.channel
     await channel.connect()
     loop.create_task(autoplay(ctx))
@@ -92,11 +99,16 @@ async def skip_music(ctx):
         await ctx.channel.send('Bot is not connected to voice channel, Please summon the bot first')
         return
 
-    is_skipping = True
+    if is_playing:
+        await ctx.channel.send('Skipping the song')
+        is_skipping = True
+    else:
+        await ctx.channel.send('Nothing is playing')
 
 
 @bot.command(pass_context=True, name='disconnect', help='Disconnect the bot')
 async def disconnect(ctx):
+    global is_playing
     if not await check_if_user_connected(ctx):
         return
 
@@ -105,8 +117,15 @@ async def disconnect(ctx):
         await ctx.channel.send('Bot is not connected to voice channel, Please summon the bot first')
         return
 
-    loop.stop()
+    is_playing = False
     await voice.disconnect()
+
+
+@bot.command(pass_context=True, aliases=['sw', 'switch'], help='Switch play mode')
+async def switch_mode(ctx):
+    global is_recommended
+    is_recommended = not is_recommended
+    await ctx.channel.send(f"Autoplay mode changed to {'Recommended' if is_recommended else 'Autoplaylist'}")
 
 
 async def check_if_user_connected(ctx):
@@ -123,7 +142,7 @@ async def search_video(channel, search):
     if len(search.result()) != 1:
         await channel.send('Unable to find any Video')
     else:
-        await channel.send('Added to queue ' + search.result()[0][3])
+        await channel.send('Added to stack ' + search.result()[0][3])
         await download_file(channel, search.result()[0][2], search.result()[0][1])
 
 
@@ -154,22 +173,30 @@ def clear_cache():
 
 
 async def get_recommended_song(ctx, key):
-    song = get_random_song().strip('\n')
-    audio = [song, song.split("=")[-1]]
+    global YOUTUBE_KEY
+    audio = get_random_song()
     url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&relatedToVideoId=" \
           f"{key}&type=video&key={YOUTUBE_KEY}"
     response = requests.get(url)
+    print(response.content)
     if response.ok:
-        data = json.loads(response.content)
-        if len(data['items']) > 1:
-            video_id = data['items'][1]['id']['videoId']
+        songs = json.loads(response.content)['items']
+        if len(songs) > 1:
+            songs.pop(0)
+            video_id = random.choice(songs)['id']['videoId']
             audio = [f"https://www.youtube.com/watch?v={video_id}", video_id]
+    else:
+        if YOUTUBE_KEY is os.getenv('YOUTUBE_API1'):
+            YOUTUBE_KEY = os.getenv('YOUTUBE_API2')
+        else:
+            YOUTUBE_KEY = os.getenv('YOUTUBE_API1')
 
     await download_file(ctx.channel, audio[0], audio[1])
 
 
 def get_random_song():
-    return random.choice(list(open('autoplaylist.txt')))
+    song = random.choice(list(open('autoplaylist.txt'))).strip('\n')
+    return [song, song.split("=")[-1]]
 
 
 bot.run(TOKEN)
