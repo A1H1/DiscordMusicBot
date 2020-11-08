@@ -16,11 +16,13 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 PREFIX = os.getenv('DISCORD_PREFIX')
 YOUTUBE_KEY = os.getenv('YOUTUBE_API1')
+OWNER_ID = os.getenv('OWNER_ID')
 
 bot = commands.Bot(command_prefix=PREFIX)
 is_playing = True
 is_skipping = False
 is_recommended = True
+is_bot_locked = False
 playlist = []
 loop = asyncio.get_event_loop()
 current_playing_song = ""
@@ -76,12 +78,8 @@ async def summon(ctx):
 
 @bot.command(pass_context=True, aliases=['p', 'play'], help='play music')
 async def play_music(ctx, *, arg):
-    if not await check_if_user_connected(ctx):
-        return
-
-    voice = get(bot.voice_clients, guild=ctx.guild)
+    voice = await get_bot_voice(ctx)
     if not voice:
-        await ctx.channel.send('Bot is not connected to voice channel, Please summon the bot first')
         return
 
     await search_video(ctx.channel, arg)
@@ -91,12 +89,8 @@ async def play_music(ctx, *, arg):
 async def skip_music(ctx):
     global is_skipping
 
-    if not await check_if_user_connected(ctx):
-        return
-
-    voice = get(bot.voice_clients, guild=ctx.guild)
+    voice = await get_bot_voice(ctx)
     if not voice:
-        await ctx.channel.send('Bot is not connected to voice channel, Please summon the bot first')
         return
 
     if is_playing:
@@ -109,12 +103,9 @@ async def skip_music(ctx):
 @bot.command(pass_context=True, name='disconnect', help='Disconnect the bot')
 async def disconnect(ctx):
     global is_playing
-    if not await check_if_user_connected(ctx):
-        return
 
-    voice = get(bot.voice_clients, guild=ctx.guild)
+    voice = await get_bot_voice(ctx)
     if not voice:
-        await ctx.channel.send('Bot is not connected to voice channel, Please summon the bot first')
         return
 
     is_playing = False
@@ -129,12 +120,45 @@ async def switch_mode(ctx):
     await ctx.channel.send(f"Autoplay mode changed to {'Recommended' if is_recommended else 'Autoplaylist'}")
 
 
+@bot.command(pass_context=True, name='lock', help='Lock the bot')
+async def lock(ctx):
+    global is_bot_locked
+
+    if str(ctx.author.id) == str(OWNER_ID):
+        is_bot_locked = True
+
+
+@bot.command(pass_context=True, name='unlock', help='Unlock the bot')
+async def unlock(ctx):
+    global is_bot_locked
+
+    if str(ctx.author.id) == str(OWNER_ID):
+        is_bot_locked = False
+
+
 async def check_if_user_connected(ctx):
     connected = ctx.author.voice
     if not connected:
         await ctx.channel.send('You are not connected to any voice channel')
         return False
     return True
+
+
+async def get_bot_voice(ctx):
+    if is_bot_locked:
+        await ctx.channel.send('Bot is Locked, Ask an admin to unlock')
+        return None
+
+    connected = ctx.author.voice
+    if not connected:
+        await ctx.channel.send('You are not connected to any voice channel')
+        return None
+
+    voice = get(bot.voice_clients, guild=ctx.guild)
+    if not voice:
+        await ctx.channel.send('Bot is not connected to any voice channel, Please summon the bot first.')
+        return None
+    return voice
 
 
 async def search_video(channel, search):
