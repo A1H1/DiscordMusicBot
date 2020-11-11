@@ -138,7 +138,7 @@ async def unlock(ctx):
 
 
 @bot.command(pass_context=True, name='pause', help='Pause music')
-async def skip_music(ctx):
+async def pause(ctx):
     voice = await get_bot_voice(ctx)
     if not voice:
         return
@@ -151,7 +151,7 @@ async def skip_music(ctx):
 
 
 @bot.command(pass_context=True, name='resume', help='Resume music')
-async def skip_music(ctx):
+async def resume(ctx):
     voice = await get_bot_voice(ctx)
     if not voice:
         return
@@ -163,6 +163,38 @@ async def skip_music(ctx):
         await ctx.channel.send('Nothing is playing')
 
 
+@bot.command(pass_context=True, name='save', help='Save music to Autoplaylist')
+async def save(ctx):
+    voice = await get_bot_voice(ctx)
+    if not voice:
+        return
+
+    song = f"https://www.youtube.com/watch?v={current_playing_song}\n"
+
+    if song in list(open('autoplaylist.txt')):
+        await ctx.channel.send('This song is already in Autoplaylist')
+    else:
+        open('autoplaylist.txt', 'a').write(song)
+        await ctx.channel.send('Song is added to Autoplaylist')
+
+
+@bot.command(pass_context=True, name='remove', help='Remove music from Autoplaylist')
+async def remove(ctx):
+    voice = await get_bot_voice(ctx)
+    if not voice:
+        return
+
+    song = f"https://www.youtube.com/watch?v={current_playing_song}\n"
+
+    songs = list(open('autoplaylist.txt'))
+    if song in songs:
+        songs.remove(song)
+        open('autoplaylist.txt', 'w').write("".join(songs))
+        await ctx.channel.send('Song is removed from Autoplaylist')
+    else:
+        await ctx.channel.send('This Song is not in Autoplaylist')
+
+
 async def check_if_user_connected(ctx):
     connected = ctx.author.voice
     if not connected:
@@ -172,7 +204,7 @@ async def check_if_user_connected(ctx):
 
 
 async def get_bot_voice(ctx):
-    if is_bot_locked:
+    if is_bot_locked and str(ctx.author.id) != str(OWNER_ID):
         await ctx.channel.send('Bot is Locked, Ask an admin to unlock')
         return None
 
