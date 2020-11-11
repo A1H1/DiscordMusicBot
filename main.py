@@ -37,7 +37,7 @@ async def autoplay(ctx):
             current_playing_song = song[0]
             await ctx.channel.send('Now playing ' + song[1])
             voice.play(discord.FFmpegPCMAudio(f'audio_cache/{song[0]}.webm'))
-            while voice.is_playing():
+            while voice.is_playing() or voice.is_paused():
                 if is_skipping:
                     is_skipping = False
                     voice.stop()
@@ -73,7 +73,8 @@ async def summon(ctx):
     channel = ctx.author.voice.channel
     await channel.connect()
     loop.create_task(autoplay(ctx))
-    await ctx.channel.send(f'Connected to {channel}')
+    await ctx.channel.send(
+        f"Connected to {channel}, Playing in {'Recommendation' if is_recommended else 'Auto Playlist'} mode.")
 
 
 @bot.command(pass_context=True, aliases=['p', 'play'], help='play music')
@@ -134,6 +135,32 @@ async def unlock(ctx):
 
     if str(ctx.author.id) == str(OWNER_ID):
         is_bot_locked = False
+
+
+@bot.command(pass_context=True, name='pause', help='Pause music')
+async def skip_music(ctx):
+    voice = await get_bot_voice(ctx)
+    if not voice:
+        return
+
+    if voice.is_playing():
+        voice.pause()
+        await ctx.channel.send('Paused')
+    else:
+        await ctx.channel.send('Nothing is playing')
+
+
+@bot.command(pass_context=True, name='resume', help='Resume music')
+async def skip_music(ctx):
+    voice = await get_bot_voice(ctx)
+    if not voice:
+        return
+
+    if voice.is_paused():
+        voice.resume()
+        await ctx.channel.send('Resuming the song')
+    else:
+        await ctx.channel.send('Nothing is playing')
 
 
 async def check_if_user_connected(ctx):
