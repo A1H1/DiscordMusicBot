@@ -251,7 +251,6 @@ async def download_file(channel, url, key):
         return
 
     try:
-        clear_cache()
         ydl_opts = {
             'outtmpl': file_path,
             'format': 'bestaudio/best',
@@ -304,6 +303,7 @@ def rpc_server():
 
         def play_thread_safe(arg):
             asyncio.run_coroutine_threadsafe(play(arg), loop)
+            return True
 
         server.register_function(play_thread_safe)
         server.serve_forever()
