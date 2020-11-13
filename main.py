@@ -17,6 +17,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 PREFIX = os.getenv('DISCORD_PREFIX')
 YOUTUBE_KEY = os.getenv('YOUTUBE_API1')
 OWNER_ID = os.getenv('OWNER_ID')
+CACHE_SIZE = os.getenv('CACHE_SIZE')
 
 bot = commands.Bot(command_prefix=PREFIX)
 is_playing = True
@@ -238,22 +239,25 @@ async def download_file(channel, url, key):
         return
 
     try:
+        clear_cache()
         ydl_opts = {
             'outtmpl': file_path,
             'format': 'bestaudio/best',
         }
         youtube_dl.YoutubeDL(ydl_opts).download([url])
         playlist.append([key, url])
-        clear_cache()
     except Exception as e:
         await channel.send(str(e))
-        pass
 
 
 def clear_cache():
-    files = next(os.walk("audio_cache"))
-    if len(files) > 100:
-        pass
+    path, v, files = next(os.walk("audio_cache"))
+    if len(files) > int(CACHE_SIZE):
+        song = random.choice(files)
+        for music in playlist:
+            if song.strip('.webm') == music[0]:
+                return
+        os.remove(f"{path}/{song}")
 
 
 async def get_recommended_song(ctx, key):
