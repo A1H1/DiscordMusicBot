@@ -3,6 +3,8 @@ import json
 import os
 import random
 from pathlib import Path
+from threading import Thread
+from xmlrpc.server import SimpleXMLRPCServer
 
 import discord
 import requests
@@ -20,6 +22,7 @@ OWNER_ID = os.getenv('OWNER_ID')
 CACHE_SIZE = os.getenv('CACHE_SIZE')
 
 bot = commands.Bot(command_prefix=PREFIX)
+context = None
 is_playing = True
 is_skipping = False
 is_recommended = True
@@ -61,7 +64,8 @@ async def on_ready():
 
 @bot.command(pass_context=True, name='summon', help='Connect the bot to voice channel')
 async def summon(ctx):
-    global is_playing
+    global is_playing, context
+    context = ctx
     if not await check_if_user_connected(ctx):
         return
 
@@ -80,11 +84,18 @@ async def summon(ctx):
 
 @bot.command(pass_context=True, aliases=['p', 'play'], help='play music')
 async def play_music(ctx, *, arg):
-    voice = await get_bot_voice(ctx)
-    if not voice:
-        return
+    global context
+    context = ctx
+    await play(arg)
 
-    await search_video(ctx.channel, arg)
+
+async def play(arg):
+    if context is not None:
+        voice = await get_bot_voice(context)
+        if not voice:
+            return
+
+        await search_video(context.channel, arg)
 
 
 @bot.command(pass_context=True, aliases=['s', 'skip'], help='Skip music')
@@ -285,5 +296,19 @@ def get_random_song():
     song = random.choice(list(open('autoplaylist.txt'))).strip('\n')
     return [song, song.split("=")[-1]]
 
+
+def rpc_server():
+    with SimpleXMLRPCServer(('localhost', 8000)) as server:
+        server.register_introspection_functions()
+
+        def play_thread_safe(arg):
+            asyncio.run_coroutine_threadsafe(play(arg), loop)
+
+        server.register_function(play_thread_safe)
+        server.serve_forever()
+
+
+rpc_thread = Thread(target=rpc_server)
+rpc_thread.start()
 
 bot.run(TOKEN)
