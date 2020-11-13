@@ -101,17 +101,24 @@ async def play(arg):
 
 @bot.command(pass_context=True, aliases=['s', 'skip'], help='Skip music')
 async def skip_music(ctx):
+    global context
+    context = ctx
+    await skip()
+
+
+async def skip():
     global is_skipping
 
-    voice = await get_bot_voice(ctx)
-    if not voice:
-        return
+    if context is not None:
+        voice = await get_bot_voice(context)
+        if not voice:
+            return
 
-    if is_playing:
-        await ctx.channel.send('Skipping the song')
-        is_skipping = True
-    else:
-        await ctx.channel.send('Nothing is playing')
+        if is_playing:
+            await context.channel.send('Skipping the song')
+            is_skipping = True
+        else:
+            await context.channel.send('Nothing is playing')
 
 
 @bot.command(pass_context=True, name='disconnect', help='Disconnect the bot')
@@ -305,7 +312,12 @@ def rpc_server():
             asyncio.run_coroutine_threadsafe(play(arg), loop)
             return True
 
+        def skip_thread_safe():
+            asyncio.run_coroutine_threadsafe(skip(), loop)
+            return True
+
         server.register_function(play_thread_safe)
+        server.register_function(skip_thread_safe)
         server.serve_forever()
 
 
