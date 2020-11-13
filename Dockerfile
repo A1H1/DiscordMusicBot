@@ -10,5 +10,8 @@ RUN pip install -r requirements.txt
 RUN apt-get update
 RUN apt-get install ffmpeg -y
 
+# Open port
+EXPOSE 8000
+
 # command to run on container start
 CMD [ "python", "./main.py" ]
