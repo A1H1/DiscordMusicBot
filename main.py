@@ -20,6 +20,7 @@ PREFIX = os.getenv('DISCORD_PREFIX')
 YOUTUBE_KEY = os.getenv('YOUTUBE_API1')
 OWNER_ID = os.getenv('OWNER_ID')
 CACHE_SIZE = os.getenv('CACHE_SIZE')
+SERVER_NAME = os.getenv('SERVER_NAME')
 
 bot = commands.Bot(command_prefix=PREFIX)
 context = None
@@ -298,7 +299,7 @@ def get_random_song():
 
 
 def rpc_server():
-    with SimpleXMLRPCServer(('localhost', 8000)) as server:
+    with SimpleXMLRPCServer((str(SERVER_NAME), 8000)) as server:
         server.register_introspection_functions()
 
         def play_thread_safe(arg):
