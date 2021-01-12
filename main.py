@@ -24,20 +24,22 @@ is_playing = True
 is_skipping = False
 is_recommended = True
 is_bot_locked = False
+is_repeat_mode = False
 playlist = []
 loop = asyncio.get_event_loop()
 current_playing_song = ""
+current_song_data = []
 
 
 async def autoplay(ctx):
-    global is_skipping, current_playing_song
+    global is_skipping, current_playing_song, current_song_data
     voice = get(bot.voice_clients, guild=ctx.guild)
     while is_playing:
         if playlist:
-            song = playlist.pop()
-            current_playing_song = song[0]
-            await ctx.channel.send('Now playing ' + song[1])
-            voice.play(discord.FFmpegPCMAudio(f'audio_cache/{song[0]}.webm'))
+            current_song_data = playlist.pop()
+            current_playing_song = current_song_data[0]
+            await ctx.channel.send('Now playing ' + current_song_data[1])
+            voice.play(discord.FFmpegPCMAudio(f'audio_cache/{current_song_data[0]}.webm'))
             while voice.is_playing() or voice.is_paused():
                 if is_skipping:
                     is_skipping = False
@@ -46,7 +48,9 @@ async def autoplay(ctx):
                 else:
                     await asyncio.sleep(.1)
         else:
-            if is_recommended:
+            if is_repeat_mode:
+                playlist.append(current_song_data)
+            elif is_recommended:
                 video_id = current_playing_song if current_playing_song else get_random_song()[-1]
                 await get_recommended_song(ctx, video_id)
             else:
@@ -194,6 +198,18 @@ async def remove(ctx):
         await ctx.channel.send('Song is removed from Autoplaylist')
     else:
         await ctx.channel.send('This Song is not in Autoplaylist')
+
+
+@bot.command(pass_context=True, name='repeat', help='Toggle repeat mode')
+async def repeat(ctx):
+    global is_repeat_mode
+
+    if is_repeat_mode:
+        is_repeat_mode = False
+        await ctx.channel.send('Repeat mode OFF')
+    else:
+        is_repeat_mode = True
+        await ctx.channel.send('Repeat mode ON')
 
 
 async def check_if_user_connected(ctx):
