@@ -60,7 +60,10 @@ async def autoplay(ctx):
 
 @bot.event
 async def on_ready():
+    activity = discord.Game(name="I’M Sexy & I Know It.", type=3)
+    await bot.change_presence(status=discord.Status.idle, activity=activity)
     print(f'{bot.user} has connected to Discord!')
+
 
 
 @bot.command(pass_context=True, name='summon', help='Connect the bot to voice channel')
