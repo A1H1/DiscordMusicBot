@@ -29,6 +29,7 @@ playlist = []
 loop = asyncio.get_event_loop()
 current_playing_song = ""
 current_song_data = []
+is_pinging = True
 
 
 async def autoplay(ctx):
@@ -60,11 +61,14 @@ async def autoplay(ctx):
 
 @bot.event
 async def on_ready():
-    activity = discord.Game(name="I’M Sexy & I Know It.", type=3)
-    await bot.change_presence(status=discord.Status.idle, activity=activity)
+    activity = discord.Activity(name="I'm Sexy and I Know It", type=3)
+    await bot.change_presence(status=discord.Status.do_not_disturb, activity= activity)
     print(f'{bot.user} has connected to Discord!')
 
-
+@bot.command()
+async def ping(ctx):
+    global is_pinging
+    await ctx.send(f'Latency is {round(bot.latency * 100)}ms')
 
 @bot.command(pass_context=True, name='summon', help='Connect the bot to voice channel')
 async def summon(ctx):
