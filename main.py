@@ -267,13 +267,16 @@ async def download_file(channel, url, key):
 
 
 def clear_cache():
-    path, v, files = next(os.walk("audio_cache"))
-    if len(files) > int(CACHE_SIZE):
-        song = random.choice(files)
-        for music in playlist:
-            if song.strip('.webm') == music[0]:
-                return
-        os.remove(f"{path}/{song}")
+    try:
+        path, v, files = next(os.walk("audio_cache"))
+        if len(files) > int(CACHE_SIZE):
+            song = random.choice(files)
+            for music in playlist:
+                if song.strip('.webm') == music[0]:
+                    return
+            os.remove(f"{path}/{song}")
+    except Exception as e:
+        pass
 
 
 async def get_recommended_song(ctx, key):
