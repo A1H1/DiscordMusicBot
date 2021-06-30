@@ -61,11 +61,11 @@ async def autoplay(ctx):
 
 @bot.event
 async def on_ready():
-    activity = discord.Activity(name="I'm Sexy and I Know It", type=3)
+    activity = discord.Activity(name="Cyka Blyat", type=2)
     await bot.change_presence(status=discord.Status.do_not_disturb, activity= activity)
     print(f'{bot.user} has connected to Discord!')
 
-@bot.command()
+@bot.command(pass_context=True, name='Ping', help='Ping your bot')
 async def ping(ctx):
     global is_pinging
     await ctx.send(f'Latency is {round(bot.latency * 100)}ms')
