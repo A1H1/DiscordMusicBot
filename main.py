@@ -271,8 +271,7 @@ async def download_file(channel, url, key):
         playlist.append([key, url])
     except Exception as e:
         await channel.send(str(e))
-
-
+    
 def clear_cache():
     try:
         path, v, files = next(os.walk("audio_cache"))
@@ -282,8 +281,8 @@ def clear_cache():
                 if song.strip('.webm') == music[0]:
                     return
             os.remove(f"{path}/{song}")
-    except:
-        print("abaababa")
+    except Exception as e:
+        pass
 
 async def get_recommended_song(ctx, key):
     global YOUTUBE_KEY
@@ -312,3 +311,4 @@ def get_random_song():
 
 
 bot.run(TOKEN)
+
