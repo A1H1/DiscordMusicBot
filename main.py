@@ -67,7 +67,7 @@ async def on_ready():
     print(f'{bot.user} has connected to Discord!')
 
 
-@bot.command(pass_context=True, name='Ping', help='Ping your bot')
+@bot.command(pass_context=True, name='ping', help='Ping your bot')
 async def ping(ctx):
     global is_pinging
     await ctx.send(f'Latency is {round(bot.latency * 100)}ms')
