@@ -40,6 +40,9 @@ async def autoplay(ctx):
             current_song_data = playlist.pop()
             current_playing_song = current_song_data[0]
             await ctx.channel.send('Now playing ' + current_song_data[1])
+            with youtube_dl.YoutubeDL({}) as ydl:
+                video = ydl.extract_info(current_song_data[1], download=False)
+            await bot.change_presence(activity=discord.Streaming(name=video['title'], url=current_song_data[1]))
             voice.play(discord.FFmpegPCMAudio(f'audio_cache/{current_song_data[0]}.webm'))
             while voice.is_playing() or voice.is_paused():
                 if is_skipping:
@@ -61,14 +64,14 @@ async def autoplay(ctx):
 
 @bot.event
 async def on_ready():
-    activity = discord.Activity(name="Cyka Blyat", type=2)
-    await bot.change_presence(status=discord.Status.do_not_disturb, activity= activity)
     print(f'{bot.user} has connected to Discord!')
+
 
 @bot.command(pass_context=True, name='Ping', help='Ping your bot')
 async def ping(ctx):
     global is_pinging
     await ctx.send(f'Latency is {round(bot.latency * 100)}ms')
+
 
 @bot.command(pass_context=True, name='summon', help='Connect the bot to voice channel')
 async def summon(ctx):
@@ -267,11 +270,13 @@ async def download_file(channel, url, key):
             'outtmpl': file_path,
             'format': 'bestaudio/best',
         }
-        youtube_dl.YoutubeDL(ydl_opts).download([url])
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
         playlist.append([key, url])
     except Exception as e:
         await channel.send(str(e))
-    
+
+
 def clear_cache():
     try:
         path, v, files = next(os.walk("audio_cache"))
@@ -282,7 +287,8 @@ def clear_cache():
                     return
             os.remove(f"{path}/{song}")
     except Exception as e:
-        pass
+        print(e)
+
 
 async def get_recommended_song(ctx, key):
     global YOUTUBE_KEY
@@ -311,4 +317,3 @@ def get_random_song():
 
 
 bot.run(TOKEN)
-
