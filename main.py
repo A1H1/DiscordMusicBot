@@ -29,6 +29,7 @@ playlist = []
 loop = asyncio.get_event_loop()
 current_playing_song = ""
 current_song_data = []
+is_pinging = True
 
 
 async def autoplay(ctx):
@@ -60,8 +61,14 @@ async def autoplay(ctx):
 
 @bot.event
 async def on_ready():
+    activity = discord.Activity(name="Cyka Blyat", type=2)
+    await bot.change_presence(status=discord.Status.do_not_disturb, activity= activity)
     print(f'{bot.user} has connected to Discord!')
 
+@bot.command(pass_context=True, name='Ping', help='Ping your bot')
+async def ping(ctx):
+    global is_pinging
+    await ctx.send(f'Latency is {round(bot.latency * 100)}ms')
 
 @bot.command(pass_context=True, name='summon', help='Connect the bot to voice channel')
 async def summon(ctx):
@@ -264,8 +271,7 @@ async def download_file(channel, url, key):
         playlist.append([key, url])
     except Exception as e:
         await channel.send(str(e))
-
-
+    
 def clear_cache():
     try:
         path, v, files = next(os.walk("audio_cache"))
@@ -277,7 +283,6 @@ def clear_cache():
             os.remove(f"{path}/{song}")
     except Exception as e:
         pass
-
 
 async def get_recommended_song(ctx, key):
     global YOUTUBE_KEY
@@ -306,3 +311,4 @@ def get_random_song():
 
 
 bot.run(TOKEN)
+
