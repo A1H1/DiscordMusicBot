@@ -11,6 +11,7 @@ from discord.ext import commands
 from discord.utils import get
 from dotenv import load_dotenv
 from youtubesearchpython import SearchVideos
+from pytube import YouTube
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -22,7 +23,7 @@ CACHE_SIZE = os.getenv('CACHE_SIZE')
 bot = commands.Bot(command_prefix=PREFIX)
 is_playing = True
 is_skipping = False
-is_recommended = True
+is_recommended = False
 is_bot_locked = False
 is_repeat_mode = False
 playlist = []
@@ -34,9 +35,9 @@ is_pinging = True
 
 async def autoplay(ctx):
     global is_skipping, current_playing_song, current_song_data
-    voice = get(bot.voice_clients, guild=ctx.guild)
     while is_playing:
         if playlist:
+            voice = get(bot.voice_clients, guild=ctx.guild)
             current_song_data = playlist.pop()
             current_playing_song = current_song_data[0]
             await ctx.channel.send('Now playing ' + current_song_data[1])
@@ -50,7 +51,7 @@ async def autoplay(ctx):
                     voice.stop()
                     break
                 else:
-                    await asyncio.sleep(.1)
+                    await asyncio.sleep(.5)
         else:
             if is_repeat_mode:
                 playlist.append(current_song_data)
@@ -193,6 +194,12 @@ async def save(ctx):
         await ctx.channel.send('Song is added to Autoplaylist')
 
 
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if before.channel is None and after.channel is not None and str(member.id) == str('756835280714989620'):
+        await member.move_to(None)
+
+
 @bot.command(pass_context=True, name='remove', help='Remove music from Autoplaylist')
 async def remove(ctx):
     voice = await get_bot_voice(ctx)
@@ -266,12 +273,8 @@ async def download_file(channel, url, key):
 
     try:
         clear_cache()
-        ydl_opts = {
-            'outtmpl': file_path,
-            'format': 'bestaudio/best',
-        }
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+        yt = YouTube(url)
+        yt.streams.filter(only_audio=True).first().download(output_path='audio_cache', filename=f'{key}.webm')
         playlist.append([key, url])
     except Exception as e:
         await channel.send(str(e))
